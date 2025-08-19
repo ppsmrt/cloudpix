@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat - Rivo Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCzi5YSMFfgnJF2xT29Yt8_PbpTyTt7Bdk",
+      authDomain: "rivo-bea46.firebaseapp.com",
+      databaseURL: "https://rivo-bea46-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "rivo-bea46",
+      storageBucket: "rivo-bea46.firebasestorage.app",
+      messagingSenderId: "9253016287",
+      appId: "1:9253016287:web:f584476c79e78215f40f6a",
+      measurementId: "G-RY85VPHXVP"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Auth check
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "signin.html";
+      }
+    });
+
+    // Send Message (dummy for now)
+    function sendMessage(event) {
+      event.preventDefault();
+      const input = document.getElementById("messageInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      const msgBox = document.createElement("div");
+      msgBox.className = "bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-2xl max-w-xs self-end";
+      msgBox.innerText = text;
+
+      document.getElementById("messages").appendChild(msgBox);
+      input.value = "";
+      input.focus();
+
+      // Auto scroll down
+      const chatBox = document.getElementById("messages");
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    window.sendMessage = sendMessage;
+  </script>
+</head>
+<body class="h-screen flex flex-col bg-gradient-to-tr from-indigo-700 via-purple-700 to-pink-600">
+
+  <!-- Top Bar -->
+  <div class="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md">
+    <button onclick="window.location.href='main.html'" class="text-white font-bold text-lg">←</button>
+    <h1 class="text-white font-semibold">John Doe</h1>
+    <div class="w-8"></div>
+  </div>
+
+  <!-- Messages Area -->
+  <div id="messages" class="flex-1 flex flex-col space-y-3 overflow-y-auto px-4 py-6">
+    <!-- Sample received message -->
+    <div class="bg-white text-gray-800 px-4 py-2 rounded-2xl max-w-xs self-start shadow">
+      Hey! How’s it going?
+    </div>
+
+    <!-- Sample sent message -->
+    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-2xl max-w-xs self-end shadow">
+      I’m good! Working on Rivo Chat 🚀
+    </div>
+  </div>
+
+  <!-- Input Box -->
+  <form onsubmit="sendMessage(event)" class="flex items-center p-4 bg-white border-t border-gray-200">
+    <input id="messageInput" type="text" placeholder="Type a message..."
+      class="flex-1 px-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500">
+    <button type="submit" class="ml-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-4 py-2 rounded-full shadow hover:opacity-90">
+      Send
+    </button>
+  </form>
+
+</body>
+</html>
