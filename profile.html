@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - Rivo Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCzi5YSMFfgnJF2xT29Yt8_PbpTyTt7Bdk",
+      authDomain: "rivo-bea46.firebaseapp.com",
+      databaseURL: "https://rivo-bea46-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "rivo-bea46",
+      storageBucket: "rivo-bea46.firebasestorage.app",
+      messagingSenderId: "9253016287",
+      appId: "1:9253016287:web:f584476c79e78215f40f6a",
+      measurementId: "G-RY85VPHXVP"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Auth check
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "signin.html";
+      } else {
+        document.getElementById("email").innerText = user.email;
+        document.getElementById("name").innerText = user.email.split("@")[0];
+        document.getElementById("avatar").src = "https://i.pravatar.cc/150?u=" + user.uid;
+      }
+    });
+
+    // Logout
+    async function logoutUser() {
+      await signOut(auth);
+      window.location.href = "signin.html";
+    }
+    window.logoutUser = logoutUser;
+  </script>
+</head>
+<body class="h-screen flex flex-col bg-gradient-to-tr from-purple-600 via-indigo-700 to-blue-700 text-white">
+
+  <!-- Top Bar -->
+  <div class="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 shadow-md">
+    <h1 class="font-bold text-xl">Profile</h1>
+    <button onclick="window.location.href='main.html'" class="bg-white text-indigo-600 px-4 py-2 rounded-lg font-semibold shadow hover:opacity-80">
+      Back
+    </button>
+  </div>
+
+  <!-- Profile Info -->
+  <div class="flex-1 flex flex-col items-center justify-center text-center px-6">
+    <img id="avatar" class="w-28 h-28 rounded-full shadow-lg border-4 border-white" src="" alt="User Avatar">
+    <h2 id="name" class="mt-4 text-2xl font-bold"></h2>
+    <p id="email" class="text-sm opacity-80"></p>
+
+    <!-- Edit button (future feature) -->
+    <button class="mt-6 bg-gradient-to-r from-pink-500 to-purple-600 px-6 py-3 rounded-xl shadow font-semibold hover:opacity-90">
+      Edit Profile
+    </button>
+
+    <!-- Logout button -->
+    <button onclick="logoutUser()" class="mt-4 bg-white text-indigo-600 px-6 py-3 rounded-xl shadow font-semibold hover:opacity-90">
+      Logout
+    </button>
+  </div>
+
+</body>
+</html>
