@@ -1,16 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Signup - Rivo Chat</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script type="module">
-    // Firebase SDK imports
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+</head>
+<body class="h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-500 to-red-500">
 
-    // Your Firebase config
+  <div class="bg-white shadow-2xl rounded-2xl w-96 p-8">
+    <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Create Account</h2>
+    <form id="signupForm" class="space-y-4">
+      <input type="text" id="name" placeholder="Full Name"
+        class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-400 outline-none" required>
+      <input type="email" id="email" placeholder="Email Address"
+        class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-400 outline-none" required>
+      <input type="password" id="password" placeholder="Password"
+        class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-400 outline-none" required>
+      <button type="submit"
+        class="w-full py-3 bg-gradient-to-r from-pink-500 to-red-500 text-white font-bold rounded-lg shadow-lg hover:opacity-90">
+        Sign Up
+      </button>
+    </form>
+    <p id="errorMsg" class="text-red-500 text-center mt-4 hidden"></p>
+    <p class="text-sm text-center mt-6">Already have an account?
+      <a href="signin.html" class="text-pink-600 font-semibold">Sign In</a>
+    </p>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    // Import Firebase SDK
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+    // Your Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyCzi5YSMFfgnJF2xT29Yt8_PbpTyTt7Bdk",
       authDomain: "rivo-bea46.firebaseapp.com",
@@ -22,49 +47,40 @@
       measurementId: "G-RY85VPHXVP"
     };
 
+    // Init Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getDatabase(app);
 
-    async function signupUser(event) {
-      event.preventDefault();
+    // Signup form
+    document.getElementById("signupForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value;
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
+      const errorMsg = document.getElementById("errorMsg");
 
       try {
-        await createUserWithEmailAndPassword(auth, email, password);
-        alert("Signup Successful! Redirecting to Sign In...");
-        window.location.href = "signin.html";
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // Update display name
+        await updateProfile(user, { displayName: name });
+
+        // Save user in DB
+        await set(ref(db, "users/" + user.uid), {
+          name: name,
+          email: email,
+          createdAt: new Date().toISOString()
+        });
+
+        window.location.href = "main.html"; // redirect after signup
       } catch (error) {
-        alert(error.message);
+        errorMsg.textContent = error.message;
+        errorMsg.classList.remove("hidden");
       }
-    }
-
-    window.signupUser = signupUser;
+    });
   </script>
-</head>
-<body class="h-screen flex items-center justify-center bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-500">
-
-  <div class="bg-white p-8 rounded-2xl shadow-lg w-96">
-    <h1 class="text-3xl font-bold text-center text-indigo-600 mb-6">Rivo Chat - Signup</h1>
-
-    <form onsubmit="signupUser(event)" class="space-y-4">
-      <input id="email" type="email" placeholder="Email"
-        class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-
-      <input id="password" type="password" placeholder="Password"
-        class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-
-      <button type="submit"
-        class="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-3 rounded-lg font-semibold shadow-md hover:opacity-90 transition">
-        Sign Up
-      </button>
-    </form>
-
-    <p class="text-center text-sm text-gray-600 mt-4">
-      Already have an account? 
-      <a href="signin.html" class="text-indigo-600 font-semibold hover:underline">Sign In</a>
-    </p>
-  </div>
-
 </body>
 </html>
