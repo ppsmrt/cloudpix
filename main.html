@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Main - Rivo Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCzi5YSMFfgnJF2xT29Yt8_PbpTyTt7Bdk",
+      authDomain: "rivo-bea46.firebaseapp.com",
+      databaseURL: "https://rivo-bea46-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "rivo-bea46",
+      storageBucket: "rivo-bea46.firebasestorage.app",
+      messagingSenderId: "9253016287",
+      appId: "1:9253016287:web:f584476c79e78215f40f6a",
+      measurementId: "G-RY85VPHXVP"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Auth Check
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "signin.html";
+      } else {
+        document.getElementById("welcome").innerText = "Hello, " + (user.email.split("@")[0]);
+      }
+    });
+
+    // Logout
+    async function logoutUser() {
+      await signOut(auth);
+      window.location.href = "signin.html";
+    }
+    window.logoutUser = logoutUser;
+  </script>
+</head>
+<body class="h-screen flex flex-col bg-gradient-to-tr from-blue-600 via-indigo-700 to-purple-700">
+
+  <!-- Top Bar -->
+  <div class="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 shadow-md">
+    <h1 id="welcome" class="text-white font-bold text-xl">Hello</h1>
+    <button onclick="logoutUser()" class="bg-white text-indigo-600 px-4 py-2 rounded-lg font-semibold shadow hover:opacity-80">
+      Logout
+    </button>
+  </div>
+
+  <!-- Chat List -->
+  <div class="flex-1 overflow-y-auto px-4 py-6">
+    <div class="space-y-4">
+
+      <!-- Chat Item -->
+      <div onclick="window.location.href='chat.html'" class="flex items-center p-4 bg-white rounded-2xl shadow cursor-pointer hover:bg-indigo-50 transition">
+        <img src="https://i.pravatar.cc/50?img=1" class="w-12 h-12 rounded-full">
+        <div class="ml-4 flex-1">
+          <h2 class="font-semibold text-gray-800">John Doe</h2>
+          <p class="text-sm text-gray-500 truncate">Hey, how are you?</p>
+        </div>
+        <span class="text-xs text-gray-400">2m</span>
+      </div>
+
+      <div onclick="window.location.href='chat.html'" class="flex items-center p-4 bg-white rounded-2xl shadow cursor-pointer hover:bg-indigo-50 transition">
+        <img src="https://i.pravatar.cc/50?img=2" class="w-12 h-12 rounded-full">
+        <div class="ml-4 flex-1">
+          <h2 class="font-semibold text-gray-800">Jane Smith</h2>
+          <p class="text-sm text-gray-500 truncate">Let’s catch up later!</p>
+        </div>
+        <span class="text-xs text-gray-400">10m</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Floating Button -->
+  <button class="fixed bottom-6 right-6 bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-4 rounded-full shadow-lg hover:opacity-90">
+    +
+  </button>
+
+</body>
+</html>
