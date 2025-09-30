@@ -2,27 +2,45 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CloudPix Admin Panel</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>CloudPix Admin</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 <style>
-body { font-family: 'Inter', sans-serif; background:#f8fafc; margin:0; min-height:100vh; }
-header { background:#fff; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); text-align:center; font-weight:bold; font-size:18px;}
-main { max-width:1000px; margin:20px auto; padding:0 16px;}
-.card { background:#fff; border-radius:16px; padding:16px; box-shadow:0 6px 24px rgba(0,0,0,0.06);}
-.table { width:100%; border-collapse: collapse; }
-.table th, .table td { padding:12px; border-bottom:1px solid #e5e7eb; text-align:left; }
-.table th { background:#f1f5f9; }
-.btn { padding:6px 12px; border-radius:10px; font-weight:600; cursor:pointer; transition:.2s;}
-.btn-delete { background:#ef4444; color:white;}
-.btn-copy { background:#3b82f6; color:white;}
-.toast-wrap { position:fixed; right:16px; bottom:40px; display:flex; flex-direction:column; gap:10px; z-index:60;}
-.toast { padding:10px 14px; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,0.1); color:white; font-weight:600;}
+body{font-family:'Inter',sans-serif;background:#f8fafc;margin:0;color:#111;}
+header{background:#fff;padding:16px;text-align:center;font-weight:bold;font-size:20px;box-shadow:0 2px 6px rgba(0,0,0,0.08);}
+main{max-width:1000px;margin:20px auto;padding:0 16px;}
+.card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.05);}
+.table{width:100%;border-collapse:collapse;}
+.table th,.table td{padding:12px;border-bottom:1px solid #e5e7eb;text-align:left;}
+.table th{background:#f1f5f9;}
+.btn{padding:6px 12px;border-radius:10px;font-weight:600;cursor:pointer;transition:.2s;}
+.btn-delete{background:#ef4444;color:white;}
+.btn-copy{background:#3b82f6;color:white;}
+.toast-wrap{position:fixed;right:16px;bottom:40px;display:flex;flex-direction:column;gap:10px;z-index:60;}
+.toast{padding:10px 14px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.1);color:white;font-weight:600;}
+footer{text-align:center;padding:16px;font-size:14px;color:#6b7280;margin-top:30px;}
 </style>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAlLV6zJ1PPGRmpkVNYuN3q0WTTEvMoiTo",
+  authDomain: "cldpix.firebaseapp.com",
+  projectId: "cldpix",
+  storageBucket: "cldpix.firebasestorage.app",
+  messagingSenderId: "476804020281",
+  appId: "1:476804020281:web:820fbe12d8720e575fb5e8"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+</script>
+
 </head>
 <body>
-
 <header>CloudPix Admin Panel</header>
 
 <main>
@@ -37,22 +55,15 @@ main { max-width:1000px; margin:20px auto; padding:0 16px;}
           <th>Actions</th>
         </tr>
       </thead>
-      <tbody id="image-table">
-        <!-- Images will be populated here -->
-      </tbody>
+      <tbody id="image-table"></tbody>
     </table>
   </div>
 </main>
 
+<footer>&copy; 2025 CloudPix. All rights reserved.</footer>
 <div class="toast-wrap" id="toasts"></div>
 
-<script>
-// Sample images JSON (replace with your dynamic list later)
-let uploads=[
-  {url:"https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d", name:"sample1", time:"2025-10-01T05:00:00Z"},
-  {url:"https://images.unsplash.com/photo-1495567720989-cebdbdd97913", name:"sample2", time:"2025-10-01T06:00:00Z"}
-];
-
+<script type="module">
 const imageTable=document.getElementById('image-table');
 const toasts=document.getElementById('toasts');
 
@@ -65,14 +76,23 @@ function showToast(msg,type='info'){
   setTimeout(()=>el.remove(),3000);
 }
 
+let uploads=[];
+
+async function fetchUploads(){
+  const q = query(collection(db,"uploads"), orderBy("time","desc"));
+  const snapshot = await getDocs(q);
+  uploads = snapshot.docs.map(doc=>({id:doc.id,...doc.data()}));
+  renderTable();
+}
+
 function renderTable(){
   imageTable.innerHTML='';
   uploads.forEach((item,index)=>{
     const tr=document.createElement('tr');
     tr.innerHTML=`
-      <td><img src="${item.url}" alt="${item.name}" width="60" class="rounded"/></td>
+      <td><img src="${item.url}" class="w-20 h-20 object-cover rounded"/></td>
       <td>${item.name}</td>
-      <td>${new Date(item.time).toLocaleString()}</td>
+      <td>${item.time?new Date(item.time.seconds*1000).toLocaleString():'-'}</td>
       <td class="flex gap-2">
         <button class="btn btn-copy">Copy Link</button>
         <button class="btn btn-delete">Delete</button>
@@ -83,18 +103,21 @@ function renderTable(){
       navigator.clipboard.writeText(mockupUrl);
       showToast('Mockup link copied','success');
     });
-    tr.querySelector('.btn-delete').addEventListener('click',()=>{
+    tr.querySelector('.btn-delete').addEventListener('click',async ()=>{
       if(confirm('Delete this image?')){
-        uploads.splice(index,1);
-        renderTable();
-        showToast('Image deleted','success');
+        try{
+          await deleteDoc(doc(db,'uploads',item.id));
+          uploads.splice(index,1);
+          renderTable();
+          showToast('Deleted','success');
+        }catch(e){ console.error(e); showToast('Delete failed','error'); }
       }
     });
     imageTable.appendChild(tr);
   });
 }
 
-renderTable();
+fetchUploads();
 </script>
 </body>
 </html>
