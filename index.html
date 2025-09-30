@@ -2,197 +2,183 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>CloudPix — Premium Image Host</title>
 
+<!-- Tailwind CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet"/>
 
 <style>
-body { font-family: 'Inter', sans-serif; background:#f8fafc; color:#1f2937; margin:0; min-height:100vh; display:flex; flex-direction:column;}
-header { background:#fff; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); display:flex; align-items:center; position:sticky; top:0; z-index:50;}
-header .brand { display:flex; align-items:center; gap:12px; }
-header .brand .logo { width:48px; height:48px; background: linear-gradient(135deg,#7c3aed,#06b6d4); color:white; font-weight:bold; font-size:18px; border-radius:12px; display:flex; align-items:center; justify-content:center; }
-main { flex:1; max-width:920px; margin:16px auto; width:100%; padding:0 16px 120px;}
-.card { background:#fff; border-radius:16px; padding:16px; box-shadow:0 6px 24px rgba(0,0,0,0.06); margin-bottom:16px;}
-.btn { padding:10px 16px; border-radius:12px; font-weight:600; display:inline-flex; align-items:center; gap:8px; cursor:pointer; transition:.2s;}
-.btn-primary { background: linear-gradient(90deg,#7c3aed,#06b6d4); color:white; box-shadow:0 4px 16px rgba(124,58,237,0.3); }
-.btn-primary:hover { opacity:0.95; transform:translateY(-1px);}
-.btn-ghost { background: transparent; border: 1px solid #d1d5db; color:#1f2937; }
-.progress { height:8px; background:#e5e7eb; border-radius:999px; overflow:hidden; flex:1;}
-.progress>div { height:100%; width:0%; background:linear-gradient(90deg,#06b6d4,#7c3aed); transition:width .2s linear;}
-.gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px;}
-.tile { border-radius:12px; overflow:hidden; background:#f1f5f9; min-height:120px; display:flex; align-items:center; justify-content:center; position:relative; cursor:pointer; transition:transform .2s;}
-.tile img { width:100%; height:100%; object-fit:cover; transition:transform .35s ease;}
+body { font-family:'Inter',sans-serif; margin:0; background:#f8fafc; color:#111; }
+header { background:#fff; padding:16px; text-align:center; font-weight:bold; font-size:20px; box-shadow:0 2px 6px rgba(0,0,0,0.08);}
+main { max-width:920px; margin:20px auto; padding:0 16px; }
+.card { background:#fff; border-radius:16px; padding:20px; box-shadow:0 8px 24px rgba(0,0,0,0.05); }
+.btn { padding:10px 16px; border-radius:10px; font-weight:600; display:inline-flex; gap:8px; align-items:center; cursor:pointer; transition:.2s; }
+.btn-primary{ background:linear-gradient(90deg,#7c3aed,#06b6d4); color:white; }
+.btn-ghost { background:transparent; border:1px solid #d1d5db; color:#111; }
+.progress { height:10px; background:#e5e7eb; border-radius:999px; overflow:hidden; margin-top:10px; }
+.progress > div { height:100%; width:0%; background:linear-gradient(90deg,#06b6d4,#7c3aed); transition:width .2s linear; }
+.gallery { display:grid; grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-top:14px; }
+.tile { border-radius:12px; overflow:hidden; position:relative; background:#f3f4f6; min-height:120px; display:flex;align-items:center;justify-content:center; }
+.tile img { width:100%; height:100%; object-fit:cover; display:block; transition: transform .35s ease; }
 .tile:hover img { transform:scale(1.05); }
-.tile:hover { transform: translateY(-3px); box-shadow:0 8px 20px rgba(0,0,0,0.1); }
-.tile .meta { position:absolute; left:6px; bottom:6px; right:6px; display:flex; justify-content:space-between; gap:4px;}
-.chip { background: rgba(31,41,55,0.1); padding:4px 8px; border-radius:10px; font-size:12px; display:flex; align-items:center; gap:4px; color:#1f2937;}
-.footer { background:#fff; padding:16px 0; text-align:center; color:#6b7280; font-size:13px; box-shadow:0 -2px 12px rgba(0,0,0,0.06);}
-.toast-wrap { position:fixed; right:16px; bottom:140px; display:flex; flex-direction:column; gap:10px; align-items:flex-end; z-index:60;}
-.toast { padding:10px 14px; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,0.1); color:white; font-weight:600;}
-.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.65); display:flex; align-items:center; justify-content:center; z-index:70;}
-.modal { max-width:92%; border-radius:16px; overflow:hidden; background:#fff; position:relative; touch-action: pan-y;}
-.modal img { width:100%; height:auto; display:block; border-radius:12px;}
-.modal .modal-controls { display:flex; justify-content:space-between; margin-top:8px;}
-.modal .btn-copy { padding:6px 12px; font-size:14px;}
+.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:80; }
+.modal { width:92%; max-width:920px; border-radius:12px; overflow:hidden; background:white; padding:16px; }
+.toast-wrap { position: fixed; right:18px; bottom:40px; z-index:90; display:flex; flex-direction:column; gap:10px; align-items:flex-end; }
+.toast { padding:10px 14px; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.2); color:white; font-weight:600; }
+footer { text-align:center; padding:16px; font-size:14px; color:#6b7280; margin-top:30px; }
 </style>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAlLV6zJ1PPGRmpkVNYuN3q0WTTEvMoiTo",
+  authDomain: "cldpix.firebaseapp.com",
+  projectId: "cldpix",
+  storageBucket: "cldpix.firebasestorage.app",
+  messagingSenderId: "476804020281",
+  appId: "1:476804020281:web:820fbe12d8720e575fb5e8"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+</script>
+
 </head>
 <body>
-
-<header>
-  <div class="brand">
-    <div class="logo">CP</div>
-    <div>
-      <div class="text-sm">CloudPix</div>
-      <div class="text-xs text-gray-500">Premium Image Hosting</div>
-    </div>
-  </div>
-</header>
+<header>CloudPix</header>
 
 <main>
   <div class="card">
-    <h2 class="text-lg font-semibold mb-2">Upload Image</h2>
-    <p class="text-sm text-gray-500 mb-3">Select an image to upload. Instant preview & shareable link.</p>
-    <div class="flex items-center gap-4">
-      <label for="file-input" class="btn btn-ghost"><i class="fa-solid fa-folder-open"></i> Choose file</label>
-      <button id="upload-now" class="btn btn-primary hidden"><i class="fa-solid fa-cloud-upload-alt"></i> Upload</button>
-    </div>
-    <input type="file" id="file-input" accept="image/*" class="hidden mt-2"/>
-    <div class="mt-3 flex items-center gap-3">
-      <div class="progress flex-1"><div id="progress-bar"></div></div>
-      <div id="status-text" class="text-xs text-gray-500 w-36 text-right">No file selected</div>
-    </div>
-    <div class="mt-4" id="mini-preview">
-      <div class="tile"><i class="fa-regular fa-image text-3xl text-gray-400"></i></div>
-    </div>
+    <h2 class="text-xl font-semibold mb-3">Upload Image</h2>
+    <p class="mb-4 text-gray-600">Choose an image file (PNG, JPG, WEBP — max 10MB).</p>
+
+    <input type="file" id="file-input" accept="image/*" class="hidden"/>
+    <label for="file-input" class="btn btn-ghost"><i class="fa-solid fa-folder-open"></i> Browse File</label>
+    
+    <div class="mt-4 progress"><div id="progress-bar"></div></div>
+    <div id="status-text" class="text-sm text-gray-500 mt-1">No file selected</div>
+
+    <button id="upload-now" class="btn btn-primary mt-3 hidden"><i class="fa-solid fa-cloud-upload-alt"></i> Upload</button>
+
+    <div id="mini-preview" class="mt-4 tile"><i class="fa-regular fa-image text-3xl text-gray-400"></i></div>
   </div>
 
-  <div class="card">
-    <div class="flex items-center justify-between mb-3">
-      <div>
-        <div class="text-sm text-gray-500">Recent Uploads</div>
-        <div class="text-xs text-gray-400">Tap to preview</div>
-      </div>
-      <div class="flex gap-2">
-        <button id="refresh-gallery" class="btn-ghost"><i class="fa-solid fa-arrows-rotate"></i></button>
-        <button id="clear-gallery" class="btn-ghost"><i class="fa-solid fa-trash"></i></button>
-      </div>
-    </div>
+  <div class="card mt-6">
+    <h3 class="text-lg font-semibold mb-3">Recent Uploads</h3>
     <div id="gallery" class="gallery"></div>
   </div>
 </main>
 
-<div class="footer">
-  &copy; 2025 CloudPix. All rights reserved.
-</div>
+<footer>&copy; 2025 CloudPix. All rights reserved.</footer>
 
 <div class="toast-wrap" id="toasts"></div>
-<div id="modal-root"></div>
+<div id="modal-root" class="hidden"></div>
 
-<script>
-const imgbbKey='8604e4b4050c63c460d0bca39cf28708';
-const fileInput=document.getElementById('file-input');
-const uploadNowBtn=document.getElementById('upload-now');
-const progressBar=document.getElementById('progress-bar');
-const statusText=document.getElementById('status-text');
-const miniPreview=document.getElementById('mini-preview');
-const gallery=document.getElementById('gallery');
-const toasts=document.getElementById('toasts');
-const modalRoot=document.getElementById('modal-root');
-let currentFile=null;
-let uploads=[];
-let modalIndex=0;
+<script type="module">
+const imgbbKey = '8604e4b4050c63c460d0bca39cf28708';
+const fileInput = document.getElementById('file-input');
+const uploadNowBtn = document.getElementById('upload-now');
+const progressBar = document.getElementById('progress-bar');
+const statusText = document.getElementById('status-text');
+const miniPreview = document.getElementById('mini-preview');
+const gallery = document.getElementById('gallery');
+const toasts = document.getElementById('toasts');
+const modalRoot = document.getElementById('modal-root');
+
+let currentFile = null;
+let uploads = [];
 
 function showToast(msg,type='info'){
   const el=document.createElement('div');
   el.className='toast';
-  el.style.background=type==='success'?'#10b981':type==='error'?'#ef4444':'#06b6d4';
+  el.style.background = type==='success'?'#10b981':type==='error'?'#ef4444':'#3b82f6';
   el.textContent=msg;
   toasts.appendChild(el);
   setTimeout(()=>el.remove(),3000);
 }
 
-fileInput.addEventListener('change',e=>{if(e.target.files[0]) handleSelectedFile(e.target.files[0]);});
+fileInput.addEventListener('change', e=>{
+  const f = e.target.files[0];
+  if(f && f.type.startsWith('image/')){
+    if(f.size > 12*1024*1024){ showToast('File too large','error'); return; }
+    currentFile = f;
+    statusText.textContent = `Ready: ${f.name}`;
+    uploadNowBtn.classList.remove('hidden');
+    const reader = new FileReader();
+    reader.onload = e=> miniPreview.innerHTML=`<img src="${e.target.result}" class="w-full h-full object-cover"/>`;
+    reader.readAsDataURL(f);
+  } else { showToast('Select an image file','error'); }
+});
 
-function handleSelectedFile(file){
-  if(!file.type.startsWith('image/')){ showToast('Select image file','error'); return;}
-  currentFile=file;
-  statusText.textContent=`Ready: ${file.name}`;
-  uploadNowBtn.classList.remove('hidden');
-  const reader=new FileReader();
-  reader.onload=ev=>{ miniPreview.innerHTML=`<img src="${ev.target.result}" class="w-full h-36 object-cover rounded"/>`; };
-  reader.readAsDataURL(file);
-  fileInput.value='';
-}
+uploadNowBtn.addEventListener('click', ()=>{ if(currentFile) uploadFile(currentFile); else showToast('No file selected','error'); });
 
-uploadNowBtn.addEventListener('click',()=>{ if(currentFile) uploadFile(currentFile); });
+async function uploadFile(file){
+  statusText.textContent='Uploading...';
+  progressBar.style.width='0%';
+  uploadNowBtn.classList.add('hidden');
 
-function uploadFile(file){
-  statusText.textContent='Uploading...'; progressBar.style.width='0%'; uploadNowBtn.classList.add('hidden');
-  const form=new FormData(); form.append('image',file);
-  const xhr=new XMLHttpRequest();
-  xhr.open('POST',`https://api.imgbb.com/1/upload?key=${imgbbKey}`);
-  xhr.upload.onprogress=e=>{ if(e.lengthComputable){ progressBar.style.width=Math.round((e.loaded/e.total)*100)+'%'; statusText.textContent=`Uploading ${Math.round((e.loaded/e.total)*100)}%`; }};
-  xhr.onreadystatechange=function(){
+  const form = new FormData();
+  form.append('image',file);
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', `https://api.imgbb.com/1/upload?key=${imgbbKey}`);
+
+  xhr.upload.onprogress = e=>{
+    if(e.lengthComputable){
+      const pct = Math.round((e.loaded/e.total)*100);
+      progressBar.style.width=pct+'%';
+      statusText.textContent=`Uploading — ${pct}%`;
+    }
+  };
+
+  xhr.onreadystatechange = async ()=>{
     if(xhr.readyState===4){
       try{
         const res=JSON.parse(xhr.responseText);
-        if(res.success){
+        if(res && res.success){
           const url=res.data.url;
-          statusText.textContent='Upload complete'; progressBar.style.width='100%'; showToast('Upload finished','success');
+          statusText.textContent='Upload complete';
+          progressBar.style.width='100%';
+          showToast('Upload finished','success');
           addToGallery({url,name:file.name,time:new Date().toISOString()});
-          currentFile=null; miniPreview.innerHTML='<div class="tile"><i class="fa-regular fa-image text-3xl text-gray-400"></i></div>';
-        } else { showToast('Upload failed','error'); statusText.textContent='Upload failed'; }
-      }catch(err){ showToast('Upload error','error'); statusText.textContent='Upload error'; }
-      setTimeout(()=>progressBar.style.width='0%',700);
+
+          // Save metadata to Firestore
+          try{
+            await addDoc(collection(db,'uploads'),{name:file.name,url:url,time:serverTimestamp()});
+            showToast('Saved to database','success');
+          } catch(e){ console.error(e); showToast('DB save failed','error'); }
+
+          currentFile=null;
+          miniPreview.innerHTML='<i class="fa-regular fa-image text-3xl text-gray-400"></i>';
+        } else { statusText.textContent='Upload failed'; showToast('Upload failed','error'); }
+      } catch(err){ console.error(err); statusText.textContent='Upload error'; showToast('Upload error','error'); }
+      finally{ setTimeout(()=>progressBar.style.width='0%',700); }
     }
   };
-  xhr.onerror=function(){ statusText.textContent='Network error'; showToast('Network error','error'); uploadNowBtn.classList.remove('hidden'); };
+  xhr.onerror=()=>{ statusText.textContent='Network error'; showToast('Network error','error'); uploadNowBtn.classList.remove('hidden'); };
   xhr.send(form);
 }
 
 function addToGallery(item){
   uploads.unshift(item);
-  const tile=document.createElement('div'); tile.className='tile';
-  tile.innerHTML=`<img src="${item.url}" alt="${item.name}" loading="lazy"/><div class="meta"><div class="chip">${new Date(item.time).toLocaleTimeString()}</div><div class="chip"><i class="fa-solid fa-link"></i></div></div>`;
-  tile.addEventListener('click',()=>openModal(uploads.indexOf(item)));
+  const tile=document.createElement('div');
+  tile.className='tile';
+  tile.innerHTML=`<img src="${item.url}" alt="${item.name}" loading="lazy"/>
+                  <div class="absolute top-1 right-1 flex gap-1">
+                    <button class="btn btn-primary btn-sm copy"><i class="fa-solid fa-link"></i></button>
+                  </div>`;
+  tile.querySelector('.copy').addEventListener('click', ()=>{
+    const mockupUrl=`https://ppsmrt.github.io/cloudpix?img=${encodeURIComponent(item.url)}`;
+    navigator.clipboard.writeText(mockupUrl);
+    showToast('Mockup link copied','success');
+  });
   gallery.prepend(tile);
 }
-
-document.getElementById('refresh-gallery').addEventListener('click',()=>{ gallery.innerHTML=''; uploads.forEach(addToGallery); showToast('Gallery refreshed'); });
-document.getElementById('clear-gallery').addEventListener('click',()=>{ gallery.innerHTML=''; uploads=[]; showToast('Gallery cleared'); });
-
-function openModal(index){
-  modalIndex=index;
-  renderModal();
-}
-
-function renderModal(){
-  const item=uploads[modalIndex];
-  modalRoot.innerHTML=`<div class="modal-backdrop" id="modal-backdrop">
-    <div class="modal p-4">
-      <img src="${item.url}" alt="${item.name}" id="modal-img"/>
-      <div class="modal-controls mt-2">
-        <button class="btn btn-copy" id="prev-btn"><i class="fa-solid fa-arrow-left"></i></button>
-        <span>${item.name}</span>
-        <button class="btn btn-copy" id="modal-copy">Copy Link</button>
-        <button class="btn btn-copy" id="next-btn"><i class="fa-solid fa-arrow-right"></i></button>
-      </div>
-    </div>
-  </div>`;
-  const backdrop=document.getElementById('modal-backdrop');
-  backdrop.addEventListener('click',e=>{ if(e.target.id==='modal-backdrop') closeModal(); });
-  document.getElementById('modal-copy').addEventListener('click',()=>{
-    const mockupUrl=`https://ppsmrt.github.io/cloudpix?img=${encodeURIComponent(item.url)}`;
-    navigator.clipboard.writeText(mockupUrl); showToast('Mockup link copied','success');
-  });
-  document.getElementById('prev-btn').addEventListener('click',()=>{ modalIndex=(modalIndex-1+uploads.length)%uploads.length; renderModal(); });
-  document.getElementById('next-btn').addEventListener('click',()=>{ modalIndex=(modalIndex+1)%uploads.length; renderModal(); });
-}
-
-function closeModal(){ modalRoot.innerHTML=''; }
 </script>
 </body>
 </html>
