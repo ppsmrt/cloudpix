@@ -175,17 +175,15 @@ async function uploadFiles(files){
             const res=JSON.parse(xhr.responseText);
             if(res && res.success){
               const url=res.data.url;
+              const mockupUrl = `https://ppsmrt.github.io/cloudpix?img=${encodeURIComponent(url)}`;
               showToast(`${file.name} uploaded`,'success');
               const heading = generateHeading(file.name);
               const description = generateDescription(heading);
-              addToGallery({url,name:file.name,heading,description,time:new Date().toISOString()});
-
-              try{ await addDoc(collection(db,'uploads'),{name:file.name,heading,description,url, time:serverTimestamp()}); showToast('Saved to database','success'); }
-              catch(e){ console.error(e); showToast('DB save failed','error'); }
-
-            } else showToast(`${file.name} upload failed`,'error');
-          } catch(err){ console.error(err); showToast('Upload error','error'); }
-          finally{ progressBar.style.width='0%'; resolve(); }
+              addToGallery({url,name:file.name,heading,description,mockupUrl});
+              await addDoc(collection(db,'uploads'),{name:file.name,url:url,heading,description,time:serverTimestamp()});
+            } else showToast(`${file.name} failed`,'error');
+          } catch(e){ console.error(e); showToast(`${file.name} error`,'error'); }
+          resolve();
         }
       };
       xhr.onerror=()=>{ showToast('Network error','error'); resolve(); };
@@ -193,12 +191,13 @@ async function uploadFiles(files){
     });
   }
 
-  currentFiles = [];
+  currentFiles=[];
   miniPreview.innerHTML='';
-  statusText.textContent='All uploads complete';
+  statusText.textContent='Upload complete';
+  progressBar.style.width='0%';
+  uploadNowBtn.classList.add('hidden');
 }
 
-// Gallery
 function addToGallery(item){
   uploads.unshift(item);
   const tile=document.createElement('div');
@@ -206,40 +205,24 @@ function addToGallery(item){
   tile.innerHTML = `<img src="${item.url}" alt="${item.name}" loading="lazy"/>
                     <div class="absolute top-1 right-1 flex gap-1">
                       <button class="btn btn-primary btn-sm copy"><i class="fa-solid fa-link"></i></button>
-                      <button class="btn btn-ghost btn-sm download"><i class="fa-solid fa-download"></i></button>
+                      <a href="${item.url}" download class="btn btn-ghost btn-sm"><i class="fa-solid fa-download"></i></a>
                     </div>`;
-  tile.addEventListener('click', e=>{
-    if(e.target.closest('button')) return; // ignore clicks on buttons
-    modalRoot.innerHTML = `<div class="modal-backdrop">
-      <div class="modal">
-        <img src="${item.url}" class="w-full h-auto mb-2"/>
-        <h3 class="font-semibold text-lg mb-1">${item.heading}</h3>
-        <p class="text-gray-500 mb-2">${item.description}</p>
-        <div class="flex gap-2">
-          <button class="btn btn-primary copy-modal"><i class="fa-solid fa-link"></i> Copy Link</button>
-          <a href="${item.url}" download class="btn btn-ghost"><i class="fa-solid fa-download"></i> Download</a>
-          <button class="btn btn-ghost close-modal">Close</button>
-        </div>
-      </div>
-    </div>`;
-    modalRoot.classList.remove('hidden');
-    modalRoot.querySelector('.close-modal').addEventListener('click',()=>{ modalRoot.classList.add('hidden'); modalRoot.innerHTML=''; });
-    modalRoot.querySelector('.copy-modal').addEventListener('click',()=>{ navigator.clipboard.writeText(item.url); showToast('Link copied','success'); });
+  tile.querySelector('.copy').addEventListener('click', ()=>{
+    navigator.clipboard.writeText(item.mockupUrl);
+    showToast('Mockup link copied','success');
   });
-
-  tile.querySelector('.copy').addEventListener('click', ()=>{ navigator.clipboard.writeText(item.url); showToast('Link copied','success'); });
-  tile.querySelector('.download').addEventListener('click', ()=>{ window.open(item.url,'_blank'); });
-
   gallery.prepend(tile);
 }
 
 // Load recent uploads from Firestore
 async function loadRecentUploads(){
-  try{
-    const q = query(collection(db,'uploads'), orderBy('time','desc'), limit(20));
-    const snap = await getDocs(q);
-    snap.forEach(doc=> addToGallery(doc.data()));
-  } catch(err){ console.error(err); }
+  const q = query(collection(db,'uploads'), orderBy('time','desc'), limit(20));
+  const snapshot = await getDocs(q);
+  snapshot.forEach(doc=>{
+    const data = doc.data();
+    data.mockupUrl = `https://ppsmrt.github.io/cloudpix?img=${encodeURIComponent(data.url)}`;
+    addToGallery(data);
+  });
 }
 
 loadRecentUploads();
