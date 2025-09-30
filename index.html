@@ -56,6 +56,8 @@ const db = getFirestore(app);
 <main>
   <div class="card" id="upload-card">
     <h2 class="text-xl font-semibold mb-3">Upload Image</h2>
+    <!-- Small instruction added -->
+    <p class="mb-2 text-sm text-gray-500">Select one or more images to upload. Each image will automatically get a heading and description.</p>
     <p class="mb-4 text-gray-600">Drag & drop or choose an image (PNG, JPG, WEBP — max 10MB).</p>
 
     <input type="file" id="file-input" accept="image/*" class="hidden" multiple/>
@@ -89,7 +91,6 @@ const statusText = document.getElementById('status-text');
 const miniPreview = document.getElementById('mini-preview');
 const gallery = document.getElementById('gallery');
 const toasts = document.getElementById('toasts');
-const modalRoot = document.getElementById('modal-root');
 
 let currentFiles = [];
 let uploads = [];
@@ -168,7 +169,7 @@ async function uploadFiles(files){
       }
     };
 
-    await new Promise((resolve,reject)=>{
+    await new Promise((resolve)=>{
       xhr.onreadystatechange=async ()=>{
         if(xhr.readyState===4){
           try{
