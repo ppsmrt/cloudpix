@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudPix Admin Panel</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<style>
+body { font-family: 'Inter', sans-serif; background:#f8fafc; margin:0; min-height:100vh; }
+header { background:#fff; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.05); text-align:center; font-weight:bold; font-size:18px;}
+main { max-width:1000px; margin:20px auto; padding:0 16px;}
+.card { background:#fff; border-radius:16px; padding:16px; box-shadow:0 6px 24px rgba(0,0,0,0.06);}
+.table { width:100%; border-collapse: collapse; }
+.table th, .table td { padding:12px; border-bottom:1px solid #e5e7eb; text-align:left; }
+.table th { background:#f1f5f9; }
+.btn { padding:6px 12px; border-radius:10px; font-weight:600; cursor:pointer; transition:.2s;}
+.btn-delete { background:#ef4444; color:white;}
+.btn-copy { background:#3b82f6; color:white;}
+.toast-wrap { position:fixed; right:16px; bottom:40px; display:flex; flex-direction:column; gap:10px; z-index:60;}
+.toast { padding:10px 14px; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,0.1); color:white; font-weight:600;}
+</style>
+</head>
+<body>
+
+<header>CloudPix Admin Panel</header>
+
+<main>
+  <div class="card">
+    <h2 class="text-lg font-semibold mb-4">Manage Uploaded Images</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Preview</th>
+          <th>File Name</th>
+          <th>Uploaded</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="image-table">
+        <!-- Images will be populated here -->
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+// Sample images JSON (replace with your dynamic list later)
+let uploads=[
+  {url:"https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d", name:"sample1", time:"2025-10-01T05:00:00Z"},
+  {url:"https://images.unsplash.com/photo-1495567720989-cebdbdd97913", name:"sample2", time:"2025-10-01T06:00:00Z"}
+];
+
+const imageTable=document.getElementById('image-table');
+const toasts=document.getElementById('toasts');
+
+function showToast(msg,type='info'){
+  const el=document.createElement('div');
+  el.className='toast';
+  el.style.background=type==='success'?'#10b981':type==='error'?'#ef4444':'#3b82f6';
+  el.textContent=msg;
+  toasts.appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+
+function renderTable(){
+  imageTable.innerHTML='';
+  uploads.forEach((item,index)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><img src="${item.url}" alt="${item.name}" width="60" class="rounded"/></td>
+      <td>${item.name}</td>
+      <td>${new Date(item.time).toLocaleString()}</td>
+      <td class="flex gap-2">
+        <button class="btn btn-copy">Copy Link</button>
+        <button class="btn btn-delete">Delete</button>
+      </td>
+    `;
+    tr.querySelector('.btn-copy').addEventListener('click',()=>{
+      const mockupUrl=`https://ppsmrt.github.io/cloudpix?img=${encodeURIComponent(item.url)}`;
+      navigator.clipboard.writeText(mockupUrl);
+      showToast('Mockup link copied','success');
+    });
+    tr.querySelector('.btn-delete').addEventListener('click',()=>{
+      if(confirm('Delete this image?')){
+        uploads.splice(index,1);
+        renderTable();
+        showToast('Image deleted','success');
+      }
+    });
+    imageTable.appendChild(tr);
+  });
+}
+
+renderTable();
+</script>
+</body>
+</html>
