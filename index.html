@@ -60,7 +60,7 @@ const db = getFirestore(app);
 <main>
   <div class="card" id="upload-card">
     <h2 class="text-2xl font-semibold mb-3">Upload Image</h2>
-    <p class="mb-2 text-sm text-gray-500">Select one or more images to upload. Each image will automatically get a heading and description.</p>
+    <p class="mb-2 text-sm text-gray-500">Select one or more images to upload. Each image will automatically get an AI-generated heading and description.</p>
     <p class="mb-4 text-gray-600">Drag & drop or choose an image (PNG, JPG, WEBP — max 10MB).</p>
 
     <input type="file" id="file-input" accept="image/*" class="hidden" multiple/>
@@ -86,6 +86,7 @@ const db = getFirestore(app);
 
 <script type="module">
 const imgbbKey = '8604e4b4050c63c460d0bca39cf28708';
+const openaiKey = 'YOUR_OPENAI_API_KEY'; // <-- Replace with your OpenAI API key
 const fileInput = document.getElementById('file-input');
 const uploadNowBtn = document.getElementById('upload-now');
 const progressBar = document.getElementById('progress-bar');
@@ -106,16 +107,25 @@ function showToast(msg,type='info'){
   setTimeout(()=>el.remove(),3000);
 }
 
-function generateHeading(filename){
-  const name = filename.replace(/\.[^/.]+$/, "");
-  return name.replace(/[-_]/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+async function generateAIText(imageUrl){
+  try{
+    const resp = await fetch("https://api.openai.com/v1/responses",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization": `Bearer ${openaiKey}`
+      },
+      body: JSON.stringify({
+        model:"gpt-4.1-mini",
+        input: `Generate a short title (1-5 words) and a descriptive caption (1 sentence) for this image: ${imageUrl}. Respond in JSON like {"title":"...","description":"..."}.`
+      })
+    });
+    const data = await resp.json();
+    return JSON.parse(data.output_text || data.output[0].content[0].text);
+  } catch(e){ console.error(e); return { title: "Image", description: "An image uploaded to CloudPix." }; }
 }
 
-function generateDescription(heading){
-  return `A beautiful image of ${heading} uploaded to CloudPix.`;
-}
-
-// Drag & drop
+// Drag & drop support
 const uploadCard = document.getElementById('upload-card');
 uploadCard.addEventListener('dragover', e=>{ e.preventDefault(); uploadCard.classList.add('border-2','border-dashed','border-indigo-400'); });
 uploadCard.addEventListener('dragleave', e=>{ e.preventDefault(); uploadCard.classList.remove('border-2','border-dashed','border-indigo-400'); });
@@ -133,15 +143,13 @@ function handleFiles(files){
     if(file.type.startsWith('image/')){
       if(file.size > 10*1024*1024){ showToast('File too large','error'); return; }
       currentFiles.push(file);
-      const heading = generateHeading(file.name);
-      const description = generateDescription(heading);
       const reader = new FileReader();
       reader.onload = e=> {
         const div = document.createElement('div');
         div.className='tile w-28 h-32 flex flex-col';
         div.innerHTML = `<img src="${e.target.result}" class="w-full h-20 object-cover rounded"/>
-                         <h4 class="text-sm font-semibold mt-1 truncate">${heading}</h4>
-                         <p class="text-xs text-gray-500 truncate">${description}</p>`;
+                         <h4 class="text-sm font-semibold mt-1 truncate">Loading AI title...</h4>
+                         <p class="text-xs text-gray-500 truncate">Generating AI description...</p>`;
         miniPreview.appendChild(div);
       };
       reader.readAsDataURL(file);
@@ -178,12 +186,13 @@ async function uploadFiles(files){
             const res=JSON.parse(xhr.responseText);
             if(res && res.success){
               const url=res.data.url;
+              const aiText = await generateAIText(url);
+              const heading = aiText.title;
+              const description = aiText.description;
               const mockupUrl = `https://ppsmrt.github.io/cloudpix?img=${encodeURIComponent(url)}`;
               showToast(`${file.name} uploaded`,'success');
-              const heading = generateHeading(file.name);
-              const description = generateDescription(heading);
               addToGallery({url,name:file.name,heading,description,mockupUrl});
-              await addDoc(collection(db,'uploads'),{name:file.name,url:url,heading,description,time:serverTimestamp()});
+              await addDoc(collection(db,'uploads'),{name:file.name,url,heading,description,time:serverTimestamp()});
             } else showToast(`${file.name} failed`,'error');
           } catch(e){ console.error(e); showToast(`${file.name} error`,'error'); }
           resolve();
@@ -213,7 +222,9 @@ function addToGallery(item){
                       <a href="${item.url}" download class="btn btn-ghost btn-sm"><i class="fa-solid fa-download"></i>
                         <span class="tooltip">Download Original</span>
                       </a>
-                    </div>`;
+                    </div>
+                    <h4 class="text-sm font-semibold mt-1 truncate">${item.heading}</h4>
+                    <p class="text-xs text-gray-500 truncate">${item.description}</p>`;
   tile.querySelector('.copy').addEventListener('click', ()=>{
     navigator.clipboard.writeText(item.mockupUrl);
     showToast('Mockup link copied','success');
@@ -221,17 +232,15 @@ function addToGallery(item){
   gallery.prepend(tile);
 }
 
-// Load recent uploads from Firestore
+// Load recent uploads from Firestore on page load
 async function loadRecentUploads(){
-  const q = query(collection(db,'uploads'), orderBy('time','desc'), limit(20));
+  const q = query(collection(db,'uploads'),orderBy('time','desc'),limit(20));
   const snapshot = await getDocs(q);
   snapshot.forEach(doc=>{
     const data = doc.data();
-    data.mockupUrl = `https://ppsmrt.github.io/cloudpix?img=${encodeURIComponent(data.url)}`;
-    addToGallery(data);
+    addToGallery({...data,mockupUrl:`https://ppsmrt.github.io/cloudpix?img=${encodeURIComponent(data.url)}`});
   });
 }
-
 loadRecentUploads();
 </script>
 </body>
