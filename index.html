@@ -12,7 +12,7 @@
 
 <style>
 body { font-family:'Inter',sans-serif; margin:0; background:#f8fafc; color:#111; }
-header { background:#fff; padding:16px; text-align:center; font-weight:bold; font-size:20px; box-shadow:0 2px 6px rgba(0,0,0,0.08);}
+header { background:#fff; padding:16px; text-align:center; font-weight:bold; font-size:22px; box-shadow:0 2px 6px rgba(0,0,0,0.08);}
 main { max-width:920px; margin:20px auto; padding:0 16px; }
 .card { background:#fff; border-radius:16px; padding:20px; box-shadow:0 8px 24px rgba(0,0,0,0.05); }
 .btn { padding:10px 16px; border-radius:10px; font-weight:600; display:inline-flex; gap:8px; align-items:center; cursor:pointer; transition:.2s; }
@@ -21,13 +21,17 @@ main { max-width:920px; margin:20px auto; padding:0 16px; }
 .progress { height:10px; background:#e5e7eb; border-radius:999px; overflow:hidden; margin-top:10px; }
 .progress > div { height:100%; width:0%; background:linear-gradient(90deg,#06b6d4,#7c3aed); transition:width .2s linear; }
 .gallery { display:grid; grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-top:14px; }
-.tile { border-radius:12px; overflow:hidden; position:relative; background:#f3f4f6; min-height:120px; display:flex;align-items:center;justify-content:center; cursor:pointer; }
+.tile { border-radius:12px; overflow:hidden; position:relative; background:#f3f4f6; min-height:140px; display:flex;align-items:center;justify-content:center; cursor:pointer; transition: all .25s; }
 .tile img { width:100%; height:100%; object-fit:cover; display:block; transition: transform .35s ease; }
 .tile:hover img { transform:scale(1.05); }
-.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:80; }
-.modal { width:92%; max-width:920px; border-radius:12px; overflow:hidden; background:white; padding:16px; }
+.tile:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+.tile .btn { font-size:0.75rem; padding:4px 6px; }
+.tooltip { position:absolute; bottom:100%; left:50%; transform:translateX(-50%); background:#111; color:white; font-size:10px; padding:2px 6px; border-radius:4px; white-space:nowrap; opacity:0; transition:.2s; pointer-events:none; }
+.tile:hover .tooltip { opacity:1; }
+#mini-preview { display:grid; grid-template-columns: repeat(auto-fill,minmax(100px,1fr)); gap:8px; margin-top:10px; }
 .toast-wrap { position: fixed; right:18px; bottom:40px; z-index:90; display:flex; flex-direction:column; gap:10px; align-items:flex-end; }
-.toast { padding:10px 14px; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.2); color:white; font-weight:600; }
+.toast { padding:10px 14px; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.2); color:white; font-weight:600; opacity:0; transform: translateX(50px); animation: slideIn 0.3s forwards; }
+@keyframes slideIn { to { opacity:1; transform: translateX(0); } }
 footer { text-align:center; padding:16px; font-size:14px; color:#6b7280; margin-top:30px; }
 </style>
 
@@ -55,8 +59,7 @@ const db = getFirestore(app);
 
 <main>
   <div class="card" id="upload-card">
-    <h2 class="text-xl font-semibold mb-3">Upload Image</h2>
-    <!-- Small instruction added -->
+    <h2 class="text-2xl font-semibold mb-3">Upload Image</h2>
     <p class="mb-2 text-sm text-gray-500">Select one or more images to upload. Each image will automatically get a heading and description.</p>
     <p class="mb-4 text-gray-600">Drag & drop or choose an image (PNG, JPG, WEBP — max 10MB).</p>
 
@@ -68,7 +71,7 @@ const db = getFirestore(app);
 
     <button id="upload-now" class="btn btn-primary mt-3 hidden"><i class="fa-solid fa-cloud-upload-alt"></i> Upload</button>
 
-    <div id="mini-preview" class="mt-4 flex flex-wrap gap-2"></div>
+    <div id="mini-preview"></div>
   </div>
 
   <div class="card mt-6">
@@ -80,7 +83,6 @@ const db = getFirestore(app);
 <footer>&copy; 2025 CloudPix. All rights reserved.</footer>
 
 <div class="toast-wrap" id="toasts"></div>
-<div id="modal-root" class="hidden"></div>
 
 <script type="module">
 const imgbbKey = '8604e4b4050c63c460d0bca39cf28708';
@@ -113,7 +115,7 @@ function generateDescription(heading){
   return `A beautiful image of ${heading} uploaded to CloudPix.`;
 }
 
-// Drag & drop support
+// Drag & drop
 const uploadCard = document.getElementById('upload-card');
 uploadCard.addEventListener('dragover', e=>{ e.preventDefault(); uploadCard.classList.add('border-2','border-dashed','border-indigo-400'); });
 uploadCard.addEventListener('dragleave', e=>{ e.preventDefault(); uploadCard.classList.remove('border-2','border-dashed','border-indigo-400'); });
@@ -136,9 +138,9 @@ function handleFiles(files){
       const reader = new FileReader();
       reader.onload = e=> {
         const div = document.createElement('div');
-        div.className='tile w-32 h-32 flex flex-col';
+        div.className='tile w-28 h-32 flex flex-col';
         div.innerHTML = `<img src="${e.target.result}" class="w-full h-20 object-cover rounded"/>
-                         <h4 class="text-sm font-semibold mt-1">${heading}</h4>
+                         <h4 class="text-sm font-semibold mt-1 truncate">${heading}</h4>
                          <p class="text-xs text-gray-500 truncate">${description}</p>`;
         miniPreview.appendChild(div);
       };
@@ -205,8 +207,12 @@ function addToGallery(item){
   tile.className='tile';
   tile.innerHTML = `<img src="${item.url}" alt="${item.name}" loading="lazy"/>
                     <div class="absolute top-1 right-1 flex gap-1">
-                      <button class="btn btn-primary btn-sm copy"><i class="fa-solid fa-link"></i></button>
-                      <a href="${item.url}" download class="btn btn-ghost btn-sm"><i class="fa-solid fa-download"></i></a>
+                      <button class="btn btn-primary btn-sm copy"><i class="fa-solid fa-link"></i>
+                        <span class="tooltip">Copy Mockup URL</span>
+                      </button>
+                      <a href="${item.url}" download class="btn btn-ghost btn-sm"><i class="fa-solid fa-download"></i>
+                        <span class="tooltip">Download Original</span>
+                      </a>
                     </div>`;
   tile.querySelector('.copy').addEventListener('click', ()=>{
     navigator.clipboard.writeText(item.mockupUrl);
