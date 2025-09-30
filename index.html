@@ -21,7 +21,7 @@ main { max-width:920px; margin:20px auto; padding:0 16px; }
 .progress { height:10px; background:#e5e7eb; border-radius:999px; overflow:hidden; margin-top:10px; }
 .progress > div { height:100%; width:0%; background:linear-gradient(90deg,#06b6d4,#7c3aed); transition:width .2s linear; }
 .gallery { display:grid; grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-top:14px; }
-.tile { border-radius:12px; overflow:hidden; position:relative; background:#f3f4f6; min-height:120px; display:flex;align-items:center;justify-content:center; }
+.tile { border-radius:12px; overflow:hidden; position:relative; background:#f3f4f6; min-height:120px; display:flex;align-items:center;justify-content:center; cursor:pointer; }
 .tile img { width:100%; height:100%; object-fit:cover; display:block; transition: transform .35s ease; }
 .tile:hover img { transform:scale(1.05); }
 .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:80; }
@@ -34,7 +34,7 @@ footer { text-align:center; padding:16px; font-size:14px; color:#6b7280; margin-
 <!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAlLV6zJ1PPGRmpkVNYuN3q0WTTEvMoiTo",
@@ -54,11 +54,11 @@ const db = getFirestore(app);
 <header>CloudPix</header>
 
 <main>
-  <div class="card">
+  <div class="card" id="upload-card">
     <h2 class="text-xl font-semibold mb-3">Upload Image</h2>
-    <p class="mb-4 text-gray-600">Choose an image file (PNG, JPG, WEBP — max 10MB).</p>
+    <p class="mb-4 text-gray-600">Drag & drop or choose an image (PNG, JPG, WEBP — max 10MB).</p>
 
-    <input type="file" id="file-input" accept="image/*" class="hidden"/>
+    <input type="file" id="file-input" accept="image/*" class="hidden" multiple/>
     <label for="file-input" class="btn btn-ghost"><i class="fa-solid fa-folder-open"></i> Browse File</label>
     
     <div class="mt-4 progress"><div id="progress-bar"></div></div>
@@ -66,7 +66,7 @@ const db = getFirestore(app);
 
     <button id="upload-now" class="btn btn-primary mt-3 hidden"><i class="fa-solid fa-cloud-upload-alt"></i> Upload</button>
 
-    <div id="mini-preview" class="mt-4 tile"><i class="fa-regular fa-image text-3xl text-gray-400"></i></div>
+    <div id="mini-preview" class="mt-4 flex flex-wrap gap-2"></div>
   </div>
 
   <div class="card mt-6">
@@ -91,7 +91,7 @@ const gallery = document.getElementById('gallery');
 const toasts = document.getElementById('toasts');
 const modalRoot = document.getElementById('modal-root');
 
-let currentFile = null;
+let currentFiles = [];
 let uploads = [];
 
 function showToast(msg,type='info'){
@@ -103,82 +103,146 @@ function showToast(msg,type='info'){
   setTimeout(()=>el.remove(),3000);
 }
 
-fileInput.addEventListener('change', e=>{
-  const f = e.target.files[0];
-  if(f && f.type.startsWith('image/')){
-    if(f.size > 12*1024*1024){ showToast('File too large','error'); return; }
-    currentFile = f;
-    statusText.textContent = `Ready: ${f.name}`;
-    uploadNowBtn.classList.remove('hidden');
-    const reader = new FileReader();
-    reader.onload = e=> miniPreview.innerHTML=`<img src="${e.target.result}" class="w-full h-full object-cover"/>`;
-    reader.readAsDataURL(f);
-  } else { showToast('Select an image file','error'); }
-});
-
-uploadNowBtn.addEventListener('click', ()=>{ if(currentFile) uploadFile(currentFile); else showToast('No file selected','error'); });
-
-async function uploadFile(file){
-  statusText.textContent='Uploading...';
-  progressBar.style.width='0%';
-  uploadNowBtn.classList.add('hidden');
-
-  const form = new FormData();
-  form.append('image',file);
-  const xhr = new XMLHttpRequest();
-  xhr.open('POST', `https://api.imgbb.com/1/upload?key=${imgbbKey}`);
-
-  xhr.upload.onprogress = e=>{
-    if(e.lengthComputable){
-      const pct = Math.round((e.loaded/e.total)*100);
-      progressBar.style.width=pct+'%';
-      statusText.textContent=`Uploading — ${pct}%`;
-    }
-  };
-
-  xhr.onreadystatechange = async ()=>{
-    if(xhr.readyState===4){
-      try{
-        const res=JSON.parse(xhr.responseText);
-        if(res && res.success){
-          const url=res.data.url;
-          statusText.textContent='Upload complete';
-          progressBar.style.width='100%';
-          showToast('Upload finished','success');
-          addToGallery({url,name:file.name,time:new Date().toISOString()});
-
-          // Save metadata to Firestore
-          try{
-            await addDoc(collection(db,'uploads'),{name:file.name,url:url,time:serverTimestamp()});
-            showToast('Saved to database','success');
-          } catch(e){ console.error(e); showToast('DB save failed','error'); }
-
-          currentFile=null;
-          miniPreview.innerHTML='<i class="fa-regular fa-image text-3xl text-gray-400"></i>';
-        } else { statusText.textContent='Upload failed'; showToast('Upload failed','error'); }
-      } catch(err){ console.error(err); statusText.textContent='Upload error'; showToast('Upload error','error'); }
-      finally{ setTimeout(()=>progressBar.style.width='0%',700); }
-    }
-  };
-  xhr.onerror=()=>{ statusText.textContent='Network error'; showToast('Network error','error'); uploadNowBtn.classList.remove('hidden'); };
-  xhr.send(form);
+function generateHeading(filename){
+  const name = filename.replace(/\.[^/.]+$/, "");
+  return name.replace(/[-_]/g, " ").replace(/\b\w/g, l => l.toUpperCase());
 }
 
+function generateDescription(heading){
+  return `A beautiful image of ${heading} uploaded to CloudPix.`;
+}
+
+// Drag & drop support
+const uploadCard = document.getElementById('upload-card');
+uploadCard.addEventListener('dragover', e=>{ e.preventDefault(); uploadCard.classList.add('border-2','border-dashed','border-indigo-400'); });
+uploadCard.addEventListener('dragleave', e=>{ e.preventDefault(); uploadCard.classList.remove('border-2','border-dashed','border-indigo-400'); });
+uploadCard.addEventListener('drop', e=>{
+  e.preventDefault(); uploadCard.classList.remove('border-2','border-dashed','border-indigo-400');
+  handleFiles(e.dataTransfer.files);
+});
+
+fileInput.addEventListener('change', e=>{ handleFiles(e.target.files); });
+
+function handleFiles(files){
+  miniPreview.innerHTML = "";
+  currentFiles = [];
+  Array.from(files).forEach(file=>{
+    if(file.type.startsWith('image/')){
+      if(file.size > 10*1024*1024){ showToast('File too large','error'); return; }
+      currentFiles.push(file);
+      const heading = generateHeading(file.name);
+      const description = generateDescription(heading);
+      const reader = new FileReader();
+      reader.onload = e=> {
+        const div = document.createElement('div');
+        div.className='tile w-32 h-32 flex flex-col';
+        div.innerHTML = `<img src="${e.target.result}" class="w-full h-20 object-cover rounded"/>
+                         <h4 class="text-sm font-semibold mt-1">${heading}</h4>
+                         <p class="text-xs text-gray-500 truncate">${description}</p>`;
+        miniPreview.appendChild(div);
+      };
+      reader.readAsDataURL(file);
+    } else showToast('Select image files only','error');
+  });
+  if(currentFiles.length>0) uploadNowBtn.classList.remove('hidden');
+}
+
+uploadNowBtn.addEventListener('click', ()=>{ if(currentFiles.length>0) uploadFiles(currentFiles); else showToast('No files selected','error'); });
+
+async function uploadFiles(files){
+  progressBar.style.width='0%';
+  statusText.textContent='Uploading...';
+  uploadNowBtn.classList.add('hidden');
+
+  for(const file of files){
+    const form = new FormData();
+    form.append('image',file);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `https://api.imgbb.com/1/upload?key=${imgbbKey}`);
+    
+    xhr.upload.onprogress = e=>{
+      if(e.lengthComputable){
+        const pct = Math.round((e.loaded/e.total)*100);
+        progressBar.style.width=pct+'%';
+        statusText.textContent=`Uploading ${file.name} — ${pct}%`;
+      }
+    };
+
+    await new Promise((resolve,reject)=>{
+      xhr.onreadystatechange=async ()=>{
+        if(xhr.readyState===4){
+          try{
+            const res=JSON.parse(xhr.responseText);
+            if(res && res.success){
+              const url=res.data.url;
+              showToast(`${file.name} uploaded`,'success');
+              const heading = generateHeading(file.name);
+              const description = generateDescription(heading);
+              addToGallery({url,name:file.name,heading,description,time:new Date().toISOString()});
+
+              try{ await addDoc(collection(db,'uploads'),{name:file.name,heading,description,url, time:serverTimestamp()}); showToast('Saved to database','success'); }
+              catch(e){ console.error(e); showToast('DB save failed','error'); }
+
+            } else showToast(`${file.name} upload failed`,'error');
+          } catch(err){ console.error(err); showToast('Upload error','error'); }
+          finally{ progressBar.style.width='0%'; resolve(); }
+        }
+      };
+      xhr.onerror=()=>{ showToast('Network error','error'); resolve(); };
+      xhr.send(form);
+    });
+  }
+
+  currentFiles = [];
+  miniPreview.innerHTML='';
+  statusText.textContent='All uploads complete';
+}
+
+// Gallery
 function addToGallery(item){
   uploads.unshift(item);
   const tile=document.createElement('div');
   tile.className='tile';
-  tile.innerHTML=`<img src="${item.url}" alt="${item.name}" loading="lazy"/>
-                  <div class="absolute top-1 right-1 flex gap-1">
-                    <button class="btn btn-primary btn-sm copy"><i class="fa-solid fa-link"></i></button>
-                  </div>`;
-  tile.querySelector('.copy').addEventListener('click', ()=>{
-    const mockupUrl=`https://ppsmrt.github.io/cloudpix?img=${encodeURIComponent(item.url)}`;
-    navigator.clipboard.writeText(mockupUrl);
-    showToast('Mockup link copied','success');
+  tile.innerHTML = `<img src="${item.url}" alt="${item.name}" loading="lazy"/>
+                    <div class="absolute top-1 right-1 flex gap-1">
+                      <button class="btn btn-primary btn-sm copy"><i class="fa-solid fa-link"></i></button>
+                      <button class="btn btn-ghost btn-sm download"><i class="fa-solid fa-download"></i></button>
+                    </div>`;
+  tile.addEventListener('click', e=>{
+    if(e.target.closest('button')) return; // ignore clicks on buttons
+    modalRoot.innerHTML = `<div class="modal-backdrop">
+      <div class="modal">
+        <img src="${item.url}" class="w-full h-auto mb-2"/>
+        <h3 class="font-semibold text-lg mb-1">${item.heading}</h3>
+        <p class="text-gray-500 mb-2">${item.description}</p>
+        <div class="flex gap-2">
+          <button class="btn btn-primary copy-modal"><i class="fa-solid fa-link"></i> Copy Link</button>
+          <a href="${item.url}" download class="btn btn-ghost"><i class="fa-solid fa-download"></i> Download</a>
+          <button class="btn btn-ghost close-modal">Close</button>
+        </div>
+      </div>
+    </div>`;
+    modalRoot.classList.remove('hidden');
+    modalRoot.querySelector('.close-modal').addEventListener('click',()=>{ modalRoot.classList.add('hidden'); modalRoot.innerHTML=''; });
+    modalRoot.querySelector('.copy-modal').addEventListener('click',()=>{ navigator.clipboard.writeText(item.url); showToast('Link copied','success'); });
   });
+
+  tile.querySelector('.copy').addEventListener('click', ()=>{ navigator.clipboard.writeText(item.url); showToast('Link copied','success'); });
+  tile.querySelector('.download').addEventListener('click', ()=>{ window.open(item.url,'_blank'); });
+
   gallery.prepend(tile);
 }
+
+// Load recent uploads from Firestore
+async function loadRecentUploads(){
+  try{
+    const q = query(collection(db,'uploads'), orderBy('time','desc'), limit(20));
+    const snap = await getDocs(q);
+    snap.forEach(doc=> addToGallery(doc.data()));
+  } catch(err){ console.error(err); }
+}
+
+loadRecentUploads();
 </script>
 </body>
 </html>
